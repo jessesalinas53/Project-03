@@ -4,64 +4,88 @@ using UnityEngine;
 
 public class Blink : MonoBehaviour
 {
+    [SerializeField] Transform player;
     [SerializeField] Camera cameraController;
     [SerializeField] Transform rayOrigin;
-    [SerializeField] float shootDistance = 30f;
-    [SerializeField] ParticleSystem handParticles;
-    [SerializeField] ParticleSystem castPointParticles;
-    //might not need[SerializeField] ParticleSystem castGroundPointParticles;
-    [SerializeField] ParticleSystem landingParticles;
-    [SerializeField] AudioClip startCastAudio = null;
-    [SerializeField] AudioClip executeCastAudio = null;
-    //isnt in dh[SerializeField] AudioClip landingAudio = null;
+    [SerializeField] float shootDistance = 40f;
+    [SerializeField] LayerMask hitLayers;
+    [SerializeField] ParticleSystem handCastParticles;
+    [SerializeField] ParticleSystem blinkPointParticles;
+    [SerializeField] ParticleSystem climbableParticles;
+    [SerializeField] AudioClip startBlinkAudio;
+    [SerializeField] AudioClip executeBlinkAudio;
+    [SerializeField] Transform blinkPointPosition;
 
-    RaycastHit objectHit; // Stores info about raycast hit
-    bool blinkFinished = false;
+    RaycastHit objectHit;
 
-    private void Update()
+    [SerializeField] CharacterController characterController;
+
+    void Start()
     {
-        while (Input.GetKeyDown(KeyCode.Mouse0))
+        Cursor.visible = false;
+    }
+
+    void Update()
+    {
+        if (Input.GetMouseButton(0))
         {
-            StartCast();
+            StartBlink();
         }
-        if (Input.GetKeyUp(KeyCode.Mouse0))
+        if (Input.GetMouseButtonUp(0))
         {
-            ExecuteCast();
+            ExecuteBlink();
         }
     }
 
-    void StartCast()
+    void StartBlink()
     {
-        // Calculate direction to shoot the ray
         Vector3 rayDirection = cameraController.transform.forward;
-        // Cast a debug ray
         Debug.DrawRay(rayOrigin.position, rayDirection * shootDistance, Color.blue, 1f);
 
-        //handParticles.Play();
-        //castPointParticles.Play();
-        //AudioSource.PlayClipAtPoint(startCastAudio, this.gameObject.transform.position);
+        handCastParticles.Play();
+        blinkPointParticles.Play();
+        //AudioSource.PlayClipAtPoint(startBlinkAudio, this.gameObject.transform.position);
+
+        if (Physics.Raycast(rayOrigin.position, rayDirection * shootDistance, out objectHit, shootDistance))
+        {
+            blinkPointParticles.transform.position = objectHit.point + objectHit.normal;
+            if (objectHit.transform.tag == "Climbable")
+            {
+                climbableParticles.Play();
+                climbableParticles.transform.position = objectHit.point + objectHit.normal;
+            }
+            else
+            {
+                climbableParticles.Stop();
+            }
+        }
     }
 
-    void ExecuteCast()
+    void ExecuteBlink()
     {
-        //AudioSource.PlayClipAtPoint(executeCastAudio, this.gameObject.transform.position);
+        characterController.enabled = false;
 
-        // Calculate direction to shoot the ray
+        handCastParticles.Stop();
+        blinkPointParticles.Stop();
+        climbableParticles.Stop();
+        //AudioSource.PlayClipAtPoint(executeBlinkAudio, this.gameObject.transform.position);
+
         Vector3 rayDirection = cameraController.transform.forward;
-        // Cast a debug ray
         Debug.DrawRay(rayOrigin.position, rayDirection * shootDistance, Color.blue, 1f);
-        // Do the raycast
+
         if (Physics.Raycast(rayOrigin.position, rayDirection, out objectHit, shootDistance))
         {
-            this.gameObject.transform.position = objectHit.point;
-        }
+            transform.position = objectHit.point + objectHit.normal * 1.5f;
 
-        //wait for seconds??
-        //blinkFinished = true;
-        if (blinkFinished = true)
-        {
-            //landingParticles.Play();
-            //AudioSource.PlayClipAtPoint(landingAudio, this.gameObject.transform.position);
+            if (objectHit.transform.tag == "Climbable")
+            {
+                transform.position += Vector3.up;
+                transform.position += Vector3.forward;
+                //transform.Translate(Vector3.up * Time.deltaTime, Space.World);
+                //transform.Translate(Vector3.forward * Time.deltaTime, Space.World);
+            }
         }
+        characterController.enabled = true;
+
     }
 }
