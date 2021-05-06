@@ -85,8 +85,9 @@ public class Blink : MonoBehaviour
         climbableParticles.Stop();
         groundPointParticles.Stop();
 
+        executeBlinkAudio.Play();
+
         transform.position = blinkPointParticles.transform.position;
-        //transform.position = Vector3.MoveTowards(transform.position, blinkPointParticles.transform.position, Time.deltaTime * 40);
 
         characterController.enabled = true;
     }
