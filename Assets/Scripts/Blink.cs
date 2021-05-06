@@ -7,20 +7,24 @@ public class Blink : MonoBehaviour
     [SerializeField] Transform player;
     [SerializeField] Camera cameraController;
     [SerializeField] Transform rayOrigin;
-    [SerializeField] float shootDistance = 40f;
+    [SerializeField] float shootDistance = 30f;
     [SerializeField] LayerMask hitLayers;
     [SerializeField] ParticleSystem handCastParticles;
     [SerializeField] ParticleSystem blinkPointParticles;
     [SerializeField] ParticleSystem climbableParticles;
+    [SerializeField] ParticleSystem groundPointParticles;
     [SerializeField] AudioSource startBlinkAudio;
     [SerializeField] AudioSource executeBlinkAudio;
-    [SerializeField] Transform blinkPointPosition;
+    [SerializeField] Transform blinkPointStartPosition;
     [SerializeField] CharacterController characterController;
     RaycastHit objectHit;
+    Transform groundPointPosition;
+    
 
     void Start()
     {
         Cursor.visible = false;
+        blinkPointStartPosition.transform.position = blinkPointParticles.transform.position;
     }
 
     void Update()
@@ -48,9 +52,15 @@ public class Blink : MonoBehaviour
         handCastParticles.Play();
         blinkPointParticles.Play();
 
+        groundPointParticles.transform.position = blinkPointParticles.transform.position;
+        Vector3 height = new Vector3(0, blinkPointParticles.transform.position.y + 2, 0);
+        groundPointParticles.transform.position -= height;
+        groundPointParticles.Play();
+
         if (Physics.Raycast(rayOrigin.position, rayDirection * shootDistance, out objectHit, shootDistance))
         {
             blinkPointParticles.transform.position = objectHit.point + objectHit.normal;
+
             if (objectHit.transform.tag == "Climbable")
             {
                 climbableParticles.Play();
@@ -61,6 +71,8 @@ public class Blink : MonoBehaviour
                 climbableParticles.Stop();
             }
         }
+        else
+            blinkPointParticles.transform.position = blinkPointStartPosition.transform.position;
     }
 
     void ExecuteBlink()
@@ -71,25 +83,11 @@ public class Blink : MonoBehaviour
         handCastParticles.Stop();
         blinkPointParticles.Stop();
         climbableParticles.Stop();
-        
-        Vector3 rayDirection = cameraController.transform.forward;
-        Debug.DrawRay(rayOrigin.position, rayDirection * shootDistance, Color.blue, .25f);
+        groundPointParticles.Stop();
 
-        player.GetComponent<PlayerMovement>().gravity = -4f;
+        transform.position = blinkPointParticles.transform.position;
+        //transform.position = Vector3.MoveTowards(transform.position, blinkPointParticles.transform.position, Time.deltaTime * 40);
 
-        if (Physics.Raycast(rayOrigin.position, rayDirection, out objectHit, shootDistance))
-        {
-            transform.position = blinkPointParticles.transform.position;
-            //transform.position = objectHit.point + objectHit.normal;
-            executeBlinkAudio.Play();
-            if (objectHit.transform.tag == "Climbable")
-            {
-                //transform.position += Vector3.up;
-                //transform.position += Vector3.forward;
-                //transform.Translate(Vector3.up * Time.deltaTime, Space.World);
-                //transform.Translate(Vector3.forward * Time.deltaTime, Space.World);
-            }
-        }
         characterController.enabled = true;
     }
 }
